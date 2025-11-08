@@ -18,7 +18,7 @@ import {
   productCollections
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -171,8 +171,10 @@ export class DbStorage implements IStorage {
 
   async removeProductFromCollection(productId: string, collectionId: string): Promise<void> {
     await db.delete(productCollections)
-      .where(eq(productCollections.productId, productId))
-      .where(eq(productCollections.collectionId, collectionId));
+      .where(and(
+        eq(productCollections.productId, productId),
+        eq(productCollections.collectionId, collectionId)
+      ));
   }
 }
 
