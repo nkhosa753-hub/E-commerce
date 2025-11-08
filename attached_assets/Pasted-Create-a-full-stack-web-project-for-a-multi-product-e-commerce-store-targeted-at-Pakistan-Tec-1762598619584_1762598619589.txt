@@ -1,0 +1,117 @@
+Create a full-stack web project for a multi-product e-commerce store targeted at Pakistan.
+
+🛠 Tech Stack:
+- Backend: Go (Gin framework)
+- Database: PostgreSQL
+- Frontend: React (Vite + React Router)
+- Auth: JWT (for admin)
+- Hosting: Frontend deployable on Vercel or Netlify, backend deployable on Render/Railway.
+- File storage: Local `uploads/` folder for images (later configurable for S3/MinIO).
+
+🎯 Main Features:
+1. Product catalog (title, description, price, category, multiple images).
+2. Product details page with a “Buy on WhatsApp” button that opens WhatsApp Web or app with prefilled message:
+   `"Hi, I want to buy <ProductName> from your store!"`
+3. Admin panel to:
+   - Add/Edit/Delete products
+   - Upload multiple images per product
+   - Create and manage categories/collections
+4. Public site:
+   - Home page with collections or featured products
+   - Category listing pages
+   - Product details page
+   - Contact/WhatsApp floating button
+5. API-based architecture so frontend and backend are decoupled.
+
+💾 Database schema (tables):
+- users(id, name, email, password_hash, role [admin|customer])
+- products(id, title, slug, description, price_pkr, category_id, created_at)
+- product_images(id, product_id, url)
+- categories(id, name, slug)
+- collections(id, name, description)
+- product_collections(product_id, collection_id)
+
+🧱 Backend:
+- Endpoints:
+  - Auth:
+    - POST /api/v1/auth/login
+  - Products:
+    - GET /api/v1/products
+    - GET /api/v1/products/:slug
+    - POST /api/v1/admin/products (multipart/form-data)
+    - PUT /api/v1/admin/products/:id
+    - DELETE /api/v1/admin/products/:id
+  - Uploads:
+    - POST /api/v1/admin/upload → accepts `multipart/form-data` image and returns its URL
+  - Categories & Collections CRUD for admin
+- Use GORM or SQLx for DB access.
+- Store images in `./uploads/` directory during development.
+- Use JWT middleware for `/admin` routes.
+
+🖥 Frontend (React):
+- Pages:
+  - `/` → Home (list featured products)
+  - `/product/:slug` → Product detail page with images and WhatsApp button
+  - `/category/:slug` → Products by category
+  - `/admin/login` → Admin login page
+  - `/admin/products` → Product list + Add/Edit forms
+- Components:
+  - ProductCard
+  - ProductGrid
+  - Header (with search + WhatsApp floating link)
+  - Footer
+  - AdminProductForm
+- Use Axios for API calls.
+- Implement `.env` file for backend API base URL.
+- Include a WhatsApp floating action button on all pages linking to a given WhatsApp number (configurable in `.env`).
+
+🧩 WhatsApp button logic:
+When user clicks “Buy on WhatsApp,” open:
+`https://wa.me/<YOUR_NUMBER>?text=Hi%20I%20want%20to%20buy%20<ProductName>%20from%20your%20store`
+Example:
+`https://wa.me/923001234567?text=Hi%20I%20want%20to%20buy%20Blue%20T-Shirt%20from%20your%20store`
+
+🗂 Folder structure:
+- backend/
+  - main.go
+  - routes/
+  - controllers/
+  - models/
+  - config/
+  - uploads/
+- frontend/
+  - src/
+    - pages/
+    - components/
+    - api/
+  - vite.config.js
+- docker-compose.yml (for api + postgres)
+- README.md
+
+🧰 Include:
+- Example `.env.example` with:
+DATABASE_URL=postgres://user:pass@localhost:5432/shopdb
+JWT_SECRET=supersecret
+ADMIN_WHATSAPP_NUMBER=923001234567
+BACKEND_URL=http://localhost:8080
+
+markdown
+Copy code
+- Basic README with setup instructions for local dev:
+- How to run backend (Go)
+- How to run frontend (Vite)
+- How to deploy backend (Render/Railway)
+- How to deploy frontend (Vercel)
+
+🚀 Deployment goal:
+- Frontend → Vercel/Netlify
+- Backend → Render/Railway
+- Database → Railway free PostgreSQL instance
+
+⚙️ Extra:
+- Add CORS config in backend for frontend origin.
+- Return clean JSON responses `{ "success": true, "data": ... }` or `{ "error": "message" }`.
+- Use TailwindCSS in React for styling.
+- Mobile responsive design.
+
+Keep the code clean, commented, and minimal — no dummy data generators or unnecessary complexity.
