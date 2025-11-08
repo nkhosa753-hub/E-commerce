@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useRoute } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import WhatsAppButton from "@/components/WhatsAppButton";
@@ -7,40 +8,72 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MessageCircle } from "lucide-react";
 import ProductGrid from "@/components/ProductGrid";
-
-import img1 from '@assets/generated_images/Blue_t-shirt_product_photo_7ebc8f90.png';
-import img2 from '@assets/generated_images/Wireless_headphones_product_72251e96.png';
-import img3 from '@assets/generated_images/Luxury_wristwatch_product_10335c57.png';
-import img4 from '@assets/generated_images/Laptop_backpack_product_ed9a2376.png';
+import { api } from "@/lib/api";
 
 export default function ProductDetail() {
   const [, params] = useRoute("/product/:slug");
   const [selectedImage, setSelectedImage] = useState(0);
 
-  const product = {
-    id: "1",
-    slug: params?.slug || "blue-tshirt",
-    title: "Premium Blue Cotton T-Shirt",
-    price: 2499,
-    category: "Fashion",
-    description: "Experience comfort and style with our premium blue cotton t-shirt. Made from 100% pure cotton, this t-shirt offers breathability and softness for all-day wear. Perfect for casual outings or everyday comfort. Available in multiple sizes.",
-    images: [img1, img1, img1, img1],
-  };
+  const { data: productResponse, isLoading } = useQuery({
+    queryKey: ["/api/v1/products", params?.slug],
+    queryFn: () => api.getProductBySlug(params?.slug || ""),
+    enabled: !!params?.slug,
+  });
 
-  const relatedProducts = [
-    { id: "2", slug: "wireless-headphones", title: "Wireless Headphones", price: 8999, image: img2, category: "Electronics" },
-    { id: "3", slug: "luxury-watch", title: "Luxury Wristwatch", price: 15999, image: img3, category: "Fashion" },
-    { id: "4", slug: "laptop-bag", title: "Laptop Backpack", price: 4999, image: img4, category: "Accessories" },
-  ];
+  const { data: allProductsResponse } = useQuery({
+    queryKey: ["/api/v1/products"],
+    queryFn: () => api.getProducts(),
+  });
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-1 flex items-center justify-center">
+          <p className="text-muted-foreground">Loading product...</p>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  const product = productResponse?.data;
+
+  if (!product) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold mb-2">Product Not Found</h1>
+            <p className="text-muted-foreground">The product you're looking for doesn't exist.</p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   const formattedPrice = new Intl.NumberFormat('en-PK', {
     style: 'currency',
     currency: 'PKR',
     minimumFractionDigits: 0,
-  }).format(product.price);
+  }).format(product.pricePkr);
 
   const whatsappMessage = `Hi, I want to buy ${product.title} from your store!`;
   const whatsappUrl = `https://wa.me/923001234567?text=${encodeURIComponent(whatsappMessage)}`;
+
+  const relatedProducts = (allProductsResponse?.data || [])
+    .filter(p => p.id !== product.id && p.categoryId === product.categoryId)
+    .slice(0, 3)
+    .map(p => ({
+      id: p.id,
+      slug: p.slug,
+      title: p.title,
+      price: p.pricePkr,
+      image: p.images[0]?.url || "",
+      category: p.category?.name || "Uncategorized",
+    }));
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -51,7 +84,7 @@ export default function ProductDetail() {
             <div>
               <div className="aspect-square bg-muted rounded-lg overflow-hidden mb-4">
                 <img
-                  src={product.images[selectedImage]}
+                  src={product.images[selectedImage]?.url || ""}
                   alt={product.title}
                   className="w-full h-full object-cover"
                   data-testid="img-product-main"
@@ -68,7 +101,7 @@ export default function ProductDetail() {
                     data-testid={`button-thumbnail-${index}`}
                   >
                     <img
-                      src={image}
+                      src={image.url}
                       alt={`${product.title} ${index + 1}`}
                       className="w-full h-full object-cover"
                     />
@@ -78,18 +111,22 @@ export default function ProductDetail() {
             </div>
 
             <div>
-              <Badge variant="secondary" className="mb-4" data-testid="badge-category">
-                {product.category}
-              </Badge>
+              {product.category && (
+                <Badge variant="secondary" className="mb-4" data-testid="badge-category">
+                  {product.category.name}
+                </Badge>
+              )}
               <h1 className="text-4xl font-bold mb-4" data-testid="text-product-title">
                 {product.title}
               </h1>
               <p className="text-3xl font-bold text-primary mb-6" data-testid="text-product-price">
                 {formattedPrice}
               </p>
-              <p className="text-muted-foreground mb-8" data-testid="text-product-description">
-                {product.description}
-              </p>
+              {product.description && (
+                <p className="text-muted-foreground mb-8" data-testid="text-product-description">
+                  {product.description}
+                </p>
+              )}
 
               <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
                 <Button 
@@ -114,9 +151,11 @@ export default function ProductDetail() {
             </div>
           </div>
 
-          <div className="border-t border-border pt-16">
-            <ProductGrid products={relatedProducts} title="Related Products" />
-          </div>
+          {relatedProducts.length > 0 && (
+            <div className="border-t border-border pt-16">
+              <ProductGrid products={relatedProducts} title="Related Products" />
+            </div>
+          )}
         </div>
       </main>
       <Footer />

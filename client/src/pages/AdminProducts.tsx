@@ -1,5 +1,7 @@
-import { useState } from "react";
-import { Link } from "wouter";
+import { useState, useEffect } from "react";
+import { Link, useLocation } from "wouter";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -21,28 +23,123 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus, Edit, Trash2, ShoppingCart, Upload, X } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Plus, Edit, Trash2, ShoppingCart, Upload, X, LogOut } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-
-import img1 from '@assets/generated_images/Blue_t-shirt_product_photo_7ebc8f90.png';
-import img2 from '@assets/generated_images/Wireless_headphones_product_72251e96.png';
+import { api } from "@/lib/api";
+import { auth } from "@/lib/auth";
 
 export default function AdminProducts() {
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
+  const [uploadingImages, setUploadingImages] = useState(false);
+  
+  const [formData, setFormData] = useState({
+    title: "",
+    slug: "",
+    description: "",
+    pricePkr: "",
+    categoryId: "",
+  });
 
-  const [products] = useState([
-    { id: "1", title: "Blue Cotton T-Shirt", price: 2499, category: "Fashion", image: img1 },
-    { id: "2", title: "Wireless Headphones", price: 8999, category: "Electronics", image: img2 },
-  ]);
+  useEffect(() => {
+    if (!auth.isAuthenticated() || !auth.isAdmin()) {
+      setLocation("/admin/login");
+    }
+  }, [setLocation]);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const token = auth.getToken();
+
+  const { data: productsResponse, isLoading: loadingProducts } = useQuery({
+    queryKey: ["/api/v1/products"],
+    queryFn: () => api.getProducts(),
+  });
+
+  const { data: categoriesResponse } = useQuery({
+    queryKey: ["/api/v1/categories"],
+    queryFn: () => api.getCategories(),
+  });
+
+  const createProductMutation = useMutation({
+    mutationFn: async (data: any) => {
+      if (!token) throw new Error("Not authenticated");
+      return api.createProduct(token, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/v1/products"] });
+      toast({
+        title: "Product Created",
+        description: "Product has been added successfully.",
+      });
+      setDialogOpen(false);
+      resetForm();
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to create product.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteProductMutation = useMutation({
+    mutationFn: async (id: string) => {
+      if (!token) throw new Error("Not authenticated");
+      return api.deleteProduct(token, id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/v1/products"] });
+      toast({
+        title: "Product Deleted",
+        description: "Product has been removed.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete product.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (files) {
-      const newImages = Array.from(files).map(file => URL.createObjectURL(file));
-      setSelectedImages([...selectedImages, ...newImages]);
-      console.log("Images uploaded:", files);
+    if (!files || !token) return;
+
+    setUploadingImages(true);
+    try {
+      const uploadedUrls: string[] = [];
+      
+      for (const file of Array.from(files)) {
+        const response = await api.uploadImage(token, file);
+        if (response.success && response.data) {
+          uploadedUrls.push(response.data.url);
+        }
+      }
+      
+      setSelectedImages([...selectedImages, ...uploadedUrls]);
+      toast({
+        title: "Images Uploaded",
+        description: `${uploadedUrls.length} image(s) uploaded successfully.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Upload Failed",
+        description: "Failed to upload images.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingImages(false);
     }
   };
 
@@ -50,25 +147,37 @@ export default function AdminProducts() {
     setSelectedImages(selectedImages.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("Product form submitted");
-    toast({
-      title: "Product Saved",
-      description: "Product has been added successfully.",
+  const resetForm = () => {
+    setFormData({
+      title: "",
+      slug: "",
+      description: "",
+      pricePkr: "",
+      categoryId: "",
     });
-    setDialogOpen(false);
     setSelectedImages([]);
   };
 
-  const handleDelete = (id: string) => {
-    console.log("Delete product:", id);
-    toast({
-      title: "Product Deleted",
-      description: "Product has been removed.",
-      variant: "destructive",
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    createProductMutation.mutate({
+      title: formData.title,
+      slug: formData.slug,
+      description: formData.description || null,
+      pricePkr: parseInt(formData.pricePkr),
+      categoryId: formData.categoryId || null,
+      imageUrls: selectedImages,
     });
   };
+
+  const handleLogout = () => {
+    auth.logout();
+    setLocation("/admin/login");
+  };
+
+  const products = productsResponse?.data || [];
+  const categories = categoriesResponse?.data || [];
 
   return (
     <div className="min-h-screen bg-muted/50">
@@ -82,9 +191,15 @@ export default function AdminProducts() {
               <span className="font-bold text-xl">PakShop Admin</span>
             </div>
           </Link>
-          <Link href="/">
-            <Button variant="outline" data-testid="button-view-site">View Site</Button>
-          </Link>
+          <div className="flex gap-2">
+            <Link href="/">
+              <Button variant="outline" data-testid="button-view-site">View Site</Button>
+            </Link>
+            <Button variant="ghost" onClick={handleLogout} data-testid="button-logout">
+              <LogOut className="h-4 w-4 mr-2" />
+              Logout
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -111,8 +226,21 @@ export default function AdminProducts() {
                   <Input
                     id="title"
                     placeholder="e.g., Premium Cotton T-Shirt"
+                    value={formData.title}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                     required
                     data-testid="input-product-title"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="slug">Slug (URL-friendly)</Label>
+                  <Input
+                    id="slug"
+                    placeholder="e.g., premium-cotton-tshirt"
+                    value={formData.slug}
+                    onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                    required
+                    data-testid="input-product-slug"
                   />
                 </div>
                 <div className="space-y-2">
@@ -121,18 +249,29 @@ export default function AdminProducts() {
                     id="price"
                     type="number"
                     placeholder="2999"
+                    value={formData.pricePkr}
+                    onChange={(e) => setFormData({ ...formData, pricePkr: e.target.value })}
                     required
                     data-testid="input-product-price"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="category">Category</Label>
-                  <Input
-                    id="category"
-                    placeholder="e.g., Fashion, Electronics"
-                    required
-                    data-testid="input-product-category"
-                  />
+                  <Select 
+                    value={formData.categoryId} 
+                    onValueChange={(value) => setFormData({ ...formData, categoryId: value })}
+                  >
+                    <SelectTrigger data-testid="select-product-category">
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map((cat) => (
+                        <SelectItem key={cat.id} value={cat.id}>
+                          {cat.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="description">Description</Label>
@@ -140,6 +279,8 @@ export default function AdminProducts() {
                     id="description"
                     placeholder="Describe your product..."
                     rows={4}
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     data-testid="textarea-product-description"
                   />
                 </div>
@@ -153,12 +294,13 @@ export default function AdminProducts() {
                       onChange={handleImageUpload}
                       className="hidden"
                       id="image-upload"
+                      disabled={uploadingImages}
                       data-testid="input-image-upload"
                     />
                     <label htmlFor="image-upload" className="cursor-pointer">
                       <Upload className="mx-auto h-12 w-12 text-muted-foreground mb-2" />
                       <p className="text-sm text-muted-foreground">
-                        Click to upload product images
+                        {uploadingImages ? "Uploading..." : "Click to upload product images"}
                       </p>
                     </label>
                   </div>
@@ -186,7 +328,9 @@ export default function AdminProducts() {
                   <Button type="button" variant="outline" onClick={() => setDialogOpen(false)} data-testid="button-cancel">
                     Cancel
                   </Button>
-                  <Button type="submit" data-testid="button-save-product">Save Product</Button>
+                  <Button type="submit" disabled={createProductMutation.isPending} data-testid="button-save-product">
+                    {createProductMutation.isPending ? "Saving..." : "Save Product"}
+                  </Button>
                 </div>
               </form>
             </DialogContent>
@@ -198,48 +342,56 @@ export default function AdminProducts() {
             <CardTitle data-testid="text-table-title">All Products</CardTitle>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Image</TableHead>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Price</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {products.map((product) => (
-                  <TableRow key={product.id} data-testid={`row-product-${product.id}`}>
-                    <TableCell>
-                      <img
-                        src={product.image}
-                        alt={product.title}
-                        className="h-12 w-12 rounded-md object-cover"
-                      />
-                    </TableCell>
-                    <TableCell className="font-medium">{product.title}</TableCell>
-                    <TableCell>{product.category}</TableCell>
-                    <TableCell>Rs. {product.price.toLocaleString()}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button size="icon" variant="ghost" data-testid={`button-edit-${product.id}`}>
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => handleDelete(product.id)}
-                          data-testid={`button-delete-${product.id}`}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
+            {loadingProducts ? (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground">Loading products...</p>
+              </div>
+            ) : products.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground">No products yet. Add your first product!</p>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Image</TableHead>
+                    <TableHead>Title</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Price</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {products.map((product) => (
+                    <TableRow key={product.id} data-testid={`row-product-${product.id}`}>
+                      <TableCell>
+                        <img
+                          src={product.images[0]?.url || ""}
+                          alt={product.title}
+                          className="h-12 w-12 rounded-md object-cover"
+                        />
+                      </TableCell>
+                      <TableCell className="font-medium">{product.title}</TableCell>
+                      <TableCell>{product.category?.name || "Uncategorized"}</TableCell>
+                      <TableCell>Rs. {product.pricePkr.toLocaleString()}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => deleteProductMutation.mutate(product.id)}
+                            disabled={deleteProductMutation.isPending}
+                            data-testid={`button-delete-${product.id}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
           </CardContent>
         </Card>
       </main>

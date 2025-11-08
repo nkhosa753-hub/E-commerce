@@ -6,21 +6,49 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ShoppingCart } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { api } from "@/lib/api";
+import { auth } from "@/lib/auth";
 
 export default function AdminLogin() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Login attempt:", { email, password });
-    toast({
-      title: "Login Successful",
-      description: "Redirecting to admin panel...",
-    });
-    setTimeout(() => setLocation("/admin/products"), 1000);
+    setIsLoading(true);
+
+    try {
+      const response = await api.login({ email, password });
+      
+      if (response.success && response.data) {
+        auth.setToken(response.data.token);
+        auth.setUser(response.data.user);
+        
+        toast({
+          title: "Login Successful",
+          description: "Redirecting to admin panel...",
+        });
+        
+        setTimeout(() => setLocation("/admin/products"), 1000);
+      } else {
+        toast({
+          title: "Login Failed",
+          description: response.error || "Invalid credentials",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An error occurred. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -63,10 +91,15 @@ export default function AdminLogin() {
                 data-testid="input-password"
               />
             </div>
-            <Button type="submit" className="w-full" data-testid="button-login">
-              Sign In
+            <Button type="submit" className="w-full" disabled={isLoading} data-testid="button-login">
+              {isLoading ? "Signing in..." : "Sign In"}
             </Button>
           </form>
+          <div className="mt-4 text-sm text-center text-muted-foreground">
+            <p>Demo credentials:</p>
+            <p>Email: admin@pakshop.com</p>
+            <p>Password: admin123</p>
+          </div>
         </CardContent>
       </Card>
     </div>
