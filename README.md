@@ -59,14 +59,20 @@ PORT=5000
    npm run db:push
    \`\`\`
 
-3. **Seed Database** (Optional - creates admin user and sample products)
+3. **Seed Database** (Optional - creates admin users and sample products)
    \`\`\`bash
-   tsx server/seed.ts
+   npm run seed
    \`\`\`
    
-   Default admin credentials:
+   **Admin Credentials (Auto-Created):**
+   
+   **Account 1 - Default Admin:**
    - Email: `admin@pakshop.com`
    - Password: `admin123`
+   
+   **Account 2 - Naveed Khosa:**
+   - Email: `naveedkhosa2006@gmail.com`
+   - Password: `Cs1212**`
 
 4. **Start Development Server**
    \`\`\`bash

@@ -34,12 +34,14 @@ This helps debug future auth issues from Render logs.
 
 ## Admin Credentials (Auto-Created on Deploy)
 
+### Account 1: Default Admin
 ```
 Email: admin@pakshop.com
 Password: admin123
+```
 
-OR
-
+### Account 2: Naveed Khosa
+```
 Email: naveedkhosa2006@gmail.com
 Password: Cs1212**
 ```
