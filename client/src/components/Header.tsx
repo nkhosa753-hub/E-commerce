@@ -23,27 +23,31 @@ export default function Header() {
               <div className="h-9 w-9 bg-primary rounded-md flex items-center justify-center">
                 <ShoppingCart className="h-5 w-5 text-primary-foreground" />
               </div>
-              <span className="font-bold text-xl hidden sm:block" data-testid="text-logo">PakShop</span>
+              <span className="font-bold text-xl hidden sm:block" data-testid="text-logo">Globe Style</span>
             </div>
           </Link>
 
-          <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-xl">
-            <div className="relative flex-1">
+          {/* <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-xl"> */}
+            {/* <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
-                placeholder="Search products..."
+                placeholder="Searchts..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9"
                 data-testid="input-search"
               />
-            </div>
-          </form>
+            </div> */}
+          {/* </form> */}
+          <div className="w-full bg-gray-100 text-gray-800 text-center py-1 font-semibold tracking-wide text-sm">
+  Trusted Worldwide • 200+ Sales • Fast,Secure & Free Delivery
+</div>
+
 
           <div className="flex items-center gap-2">
             <a
-              href={`https://wa.me/923001234567`}
+              href={`https://wa.me/923294816244`}
               target="_blank"
               rel="noopener noreferrer"
               className="hidden sm:block"

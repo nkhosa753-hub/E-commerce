@@ -136,7 +136,7 @@ The platform includes a floating WhatsApp button and "Buy on WhatsApp" functiona
 
 To configure your WhatsApp number:
 1. Update the phone number in `client/src/components/WhatsAppButton.tsx`
-2. Default: `923001234567` (format: country code + number without +)
+2. Default: `923297729363` (format: country code + number without +)
 
 ## Database Schema
 

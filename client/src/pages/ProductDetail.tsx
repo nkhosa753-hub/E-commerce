@@ -61,7 +61,7 @@ export default function ProductDetail() {
   }).format(product.pricePkr);
 
   const whatsappMessage = `Hi, I want to buy ${product.title} from your store!`;
-  const whatsappUrl = `https://wa.me/923001234567?text=${encodeURIComponent(whatsappMessage)}`;
+  const whatsappUrl = `https://wa.me/923294816244?text=${encodeURIComponent(whatsappMessage)}`;
 
   const relatedProducts = (allProductsResponse?.data || [])
     .filter(p => p.id !== product.id && p.categoryId === product.categoryId)
@@ -144,7 +144,7 @@ export default function ProductDetail() {
                 <ul className="space-y-2 text-sm text-muted-foreground">
                   <li>• 100% Premium Quality</li>
                   <li>• Cash on Delivery Available</li>
-                  <li>• Free Shipping on Orders Over Rs. 2,000</li>
+                  <li>• Free Shipping</li>
                   <li>• Easy Returns & Exchange</li>
                 </ul>
               </div>

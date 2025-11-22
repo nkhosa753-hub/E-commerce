@@ -96,9 +96,7 @@ export default function AdminLogin() {
             </Button>
           </form>
           <div className="mt-4 text-sm text-center text-muted-foreground">
-            <p>Demo credentials:</p>
-            <p>Email: admin@pakshop.com</p>
-            <p>Password: admin123</p>
+        
           </div>
         </CardContent>
       </Card>

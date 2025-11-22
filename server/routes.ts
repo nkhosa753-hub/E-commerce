@@ -71,7 +71,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
       });
     } catch (error: any) {
-      res.status(500).json({ success: false, error: error.message });
+      console.error("Login error:", error);
+      const errorMessage = error?.message || error?.toString() || "Internal server error";
+      res.status(500).json({ success: false, error: errorMessage });
     }
   });
 
@@ -81,7 +83,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const products = await storage.getProducts();
       res.json({ success: true, data: products });
     } catch (error: any) {
-      res.status(500).json({ success: false, error: error.message });
+      console.error("Get products error:", error);
+      const errorMessage = error?.message || error?.toString() || "Internal server error";
+      res.status(500).json({ success: false, error: errorMessage });
     }
   });
 

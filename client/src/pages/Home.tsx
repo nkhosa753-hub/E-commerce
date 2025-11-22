@@ -7,10 +7,15 @@ import ProductGrid from "@/components/ProductGrid";
 import TrustSignals from "@/components/TrustSignals";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import { api, type Product } from "@/lib/api";
+import AnnouncementBar from "@/components/AnnouncementBar";
+
 
 import electronicsImg from '@assets/generated_images/Electronics_collection_banner_9ebbb942.png';
 import fashionImg from '@assets/generated_images/Fashion_collection_banner_1e17f209.png';
 import homeImg from '@assets/generated_images/Home_goods_collection_banner_6193ea19.png';
+import BeautyImg from '@assets/generated_images/Beauty.png';
+import SportsImg from '@assets/generated_images/Sports.png';
+import LivinImg from '@assets/generated_images/Livin.png';
 
 export default function Home() {
   const { data: productsResponse, isLoading } = useQuery({
@@ -24,6 +29,9 @@ export default function Home() {
     { id: "1", slug: "electronics", name: "Electronics", image: electronicsImg, productCount: products.filter(p => p.category?.slug === "electronics").length },
     { id: "2", slug: "fashion", name: "Fashion & Apparel", image: fashionImg, productCount: products.filter(p => p.category?.slug === "fashion").length },
     { id: "3", slug: "accessories", name: "Accessories", image: homeImg, productCount: products.filter(p => p.category?.slug === "accessories").length },
+    { id: "4", slug: "beauty", name: "Beauty & Personal Care", image: BeautyImg, productCount: products.filter(p => p.category?.slug === "beauty").length },
+    { id: "5", slug: "sports", name: "Sports & Fitness", image: SportsImg, productCount: products.filter(p => p.category?.slug === "sports").length },
+    { id: "6", slug: "home", name: "Home & Living", image: LivinImg, productCount: products.filter(p => p.category?.slug === "home").length },
   ];
 
   const bestSellers = products.slice(0, 6).map(p => ({
@@ -37,6 +45,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <AnnouncementBar />
       <Header />
       <main className="flex-1">
         <div className="max-w-7xl mx-auto px-4 py-8">
@@ -44,9 +53,9 @@ export default function Home() {
           
           <section className="py-16">
             <h2 className="text-3xl font-bold mb-8" data-testid="text-collections-title">
-              Shop by Collection
+              Our Collections
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {collections.map((collection) => (
                 <CollectionCard key={collection.id} {...collection} />
               ))}

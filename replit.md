@@ -88,7 +88,7 @@ After seeding:
 
 ## WhatsApp Configuration
 
-Default WhatsApp number: `923001234567`
+Default WhatsApp number: `923297729363`
 
 To change:
 - Update in `client/src/components/WhatsAppButton.tsx`

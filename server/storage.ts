@@ -67,7 +67,7 @@ export class DbStorage implements IStorage {
     const allProducts = await db.select().from(products).orderBy(desc(products.createdAt));
     
     const productsWithDetails = await Promise.all(
-      allProducts.map(async (product) => {
+      allProducts.map(async (product: Product) => {
         const images = await db.select().from(productImages).where(eq(productImages.productId, product.id));
         let category = null;
         if (product.categoryId) {
@@ -102,6 +102,28 @@ export class DbStorage implements IStorage {
       await db.insert(productImages).values(
         imageUrls.map(url => ({ productId: newProduct.id, url }))
       );
+    }
+
+    // Ensure product is added to the collection that matches its category slug (if exists)
+    if (newProduct.categoryId) {
+      try {
+        const [cat] = await db.select().from(categories).where(eq(categories.id, newProduct.categoryId));
+        if (cat) {
+          const [col] = await db.select().from(collections).where(eq(collections.slug, cat.slug));
+          if (col) {
+            // Avoid duplicate mapping
+            const existing = await db.select().from(productCollections).where(and(
+              eq(productCollections.productId, newProduct.id),
+              eq(productCollections.collectionId, col.id)
+            ));
+            if (existing.length === 0) {
+              await db.insert(productCollections).values({ productId: newProduct.id, collectionId: col.id });
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error linking product to collection:', err);
+      }
     }
 
     return newProduct;
