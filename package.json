@@ -5,7 +5,7 @@
   "license": "MIT",
    "scripts": {
     "build": "npm run build:client && npm run build:server && npm run db:setup",
-    "build:client": "vite build --outDir dist",
+    "build:client": "cd client && vite build --outDir ../dist",
     "build:server": "esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist-server",
     "db:setup": "drizzle-kit push",
     "postbuild": "node -e \"const fs=require('fs');const path=require('path');const src='dist';const dest='dist-server';if(fs.existsSync(src)){ if(!fs.existsSync(dest)) fs.mkdirSync(dest,{recursive:true}); const copy=(s,d)=>{for(const e of fs.readdirSync(s,{withFileTypes:true})){const sp=path.join(s,e.name);const dp=path.join(d,e.name); if(e.isDirectory()){ if(!fs.existsSync(dp)) fs.mkdirSync(dp); copy(sp,dp);} else{ fs.copyFileSync(sp,dp);} }}; copy(src,dest); console.log('postbuild: copied dist -> dist-server'); } else { console.warn('postbuild: dist folder not found, nothing to copy'); }\"",
