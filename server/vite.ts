@@ -1,4 +1,4 @@
-import express, { type Express } from "express";
+import express, { type Express, type Request, type Response, type NextFunction } from "express";
 import fs from "fs";
 import path from "path";
 import { createServer as createViteServer, createLogger } from "vite";
@@ -105,8 +105,13 @@ export function serveStatic(app: Express) {
     console.error("\n⚠️  Build Error: dist folder not found!");
     console.error("This usually means the client build failed or hasn't been run yet.\n");
 
-    // Serve a helpful error page instead of crashing
-    app.use((_req, res) => {
+    // Serve a helpful error page instead of crashing. For API routes, call next()
+    app.use((req: Request, res: Response, next: NextFunction) => {
+      if (req.path && req.path.startsWith('/api')) {
+        // Let API routes handle the request
+        return next();
+      }
+
       res.status(503).send(`
         <!DOCTYPE html>
         <html>
