@@ -3,6 +3,8 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import cors from "cors";
+import path from "path";
+import fs from "fs";
 
 const app = express();
 
@@ -13,12 +15,15 @@ declare module 'http' {
     rawBody: unknown
   }
 }
+
+// ✅ ADD BACK THE BODY SIZE LIMITS (CRITICAL FOR FILE UPLOADS)
 app.use(express.json({
+  limit: '10mb',
   verify: (req, _res, buf) => {
     req.rawBody = buf;
   }
 }));
-app.use(express.urlencoded({ extended: false }));
+app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 
 app.use("/uploads", express.static("uploads"));
 
@@ -59,28 +64,28 @@ app.use((req, res, next) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
 
-    // Log error for debugging
     console.error("Error:", err);
-    
-    // Send error response
     res.status(status).json({ message });
   });
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
+  // ✅ ADD DEBUGGING FOR PRODUCTION
   if (app.get("env") === "development") {
     await setupVite(app, server);
   } else {
+    // Debug the static file serving
+    const distPath = path.join(process.cwd(), 'dist');
+    console.log('Production: Looking for dist folder at:', distPath);
+    console.log('Directory exists:', fs.existsSync(distPath));
+    
+    if (fs.existsSync(distPath)) {
+      console.log('Dist folder contents:', fs.readdirSync(distPath));
+    }
+    
     serveStatic(app);
   }
 
-  // ALWAYS serve the app on the port specified in the environment variable PORT
-  // Other ports are firewalled. Default to 5000 if not specified.
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = parseInt(process.env.PORT || '5000', 10);
-  const host = process.env.HOST || 'localhost';
+  const port = parseInt(process.env.PORT || '3000', 10); // ✅ Change to 3000 for Render
+  const host = process.env.HOST || '0.0.0.0'; // ✅ Change to 0.0.0.0 for Render
 
   server.listen({
     port,
@@ -90,3 +95,4 @@ app.use((req, res, next) => {
     log(` Serving on http://${host}:${port}`);
   });
 })();
+
