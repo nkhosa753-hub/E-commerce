@@ -3,20 +3,12 @@
   "version": "1.0.0",
   "type": "module",
   "license": "MIT",
-  "scripts": {
-    "dev": "cross-env NODE_ENV=development tsx server/index.ts",
-    "build": "npm run build:client || true && npm run build:server && npm run db:setup && npm run debug:build",
-    "build:client": "vite build --outDir dist 2>&1 || echo 'Client build warning: continuing deployment'",
+   "scripts": {
+    "build": "npm run build:client || true && npm run build:server && npm run db:setup",
+    "build:client": "vite build --outDir dist",
     "build:server": "esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist-server",
     "db:setup": "drizzle-kit push",
-    "debug:build": "node build-debug.js",
-    "start": "node dist-server/index.js",
-    "check": "tsc",
-    "db:push": "drizzle-kit push",
-    "seed": "tsx server/seed.ts",
-    "dedupe": "tsx server/dedupe.ts",
-    "inspect-db": "tsx server/inspect-db.ts",
-    "sync-product-collections": "tsx server/sync-product-collections.ts"
+    "start": "node dist-server/index.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
