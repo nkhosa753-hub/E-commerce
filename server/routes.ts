@@ -39,16 +39,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { email, password } = req.body;
 
       if (!email || !password) {
+        console.warn("[AUTH] Missing email or password in login request");
         return res.status(400).json({ success: false, error: "Email and password required" });
       }
 
+      console.log(`[AUTH] Login attempt for email: ${email}`);
       const user = await storage.getUserByEmail(email);
       if (!user) {
+        console.warn(`[AUTH] User not found: ${email}`);
         return res.status(401).json({ success: false, error: "Invalid credentials" });
       }
 
+      console.log(`[AUTH] User found: ${user.email}, role: ${user.role}`);
       const validPassword = await bcrypt.compare(password, user.passwordHash);
       if (!validPassword) {
+        console.warn(`[AUTH] Invalid password for user: ${email}`);
         return res.status(401).json({ success: false, error: "Invalid credentials" });
       }
 
@@ -58,6 +63,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         role: user.role,
       });
 
+      console.log(`[AUTH] ✓ Login successful for user: ${email}, role: ${user.role}`);
       res.json({
         success: true,
         data: {
