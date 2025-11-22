@@ -167,7 +167,9 @@
 
 @layer base {
   * {
-    @apply border-border;
+    /* Use CSS variable for border color to avoid Tailwind @apply issues during CI
+       (some PostCSS/Tailwind setups may not generate the `border-border` utility). */
+    border-color: hsl(var(--border) / 1);
   }
 
   body {
